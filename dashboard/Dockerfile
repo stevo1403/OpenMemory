@@ -3,6 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build-time public vars for Next.js client bundle
+ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+ARG NEXT_PUBLIC_API_KEY=
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_API_KEY=${NEXT_PUBLIC_API_KEY}
+
 # Install dependencies
 COPY package*.json ./
 RUN npm install
@@ -18,6 +24,11 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+ARG NEXT_PUBLIC_API_KEY=
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_API_KEY=${NEXT_PUBLIC_API_KEY}
+
 # Install only production dependencies
 COPY package*.json ./
 RUN npm install --omit=dev
@@ -25,7 +36,7 @@ RUN npm install --omit=dev
 # Copy built assets from builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/next.config.js ./next.config.js
 
 # Create a dedicated non-root user for security
 RUN addgroup -g 1001 -S nodejs \

@@ -183,10 +183,30 @@ npm install
 npm run dev   # default :8080
 ```
 
-Or with Docker:
+Or with Docker (API + MCP):
 
 ```bash
 docker compose up --build -d
+```
+
+Optional: include the dashboard service profile:
+
+```bash
+docker compose --profile ui up --build -d
+```
+
+Using Doppler-managed config (recommended for hosted dashboard/API URLs):
+
+```bash
+cd OpenMemory
+tools/ops/compose_with_doppler.sh up -d --build
+```
+
+Check service status:
+
+```bash
+docker compose ps
+curl -f http://localhost:8080/health
 ```
 
 The backend exposes:
@@ -194,7 +214,7 @@ The backend exposes:
 - `/api/memory/*` – memory operations
 - `/api/temporal/*` – temporal knowledge graph
 - `/mcp` – MCP server
-- dashboard UI
+- dashboard UI (when `ui` profile is enabled)
 
 ---
 

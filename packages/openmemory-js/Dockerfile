@@ -1,49 +1,31 @@
 # ===== BUILD STAGE =====
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
-
-# Install system dependencies required for native module compilation,
-# plus curl and bash (needed to run the Bun installation script)
-RUN apk add --no-cache python3 make g++ curl bash
-
-# Install Bun globally and relocate it to a shared, persistent location
-RUN curl -fsSL https://bun.sh/install | bash \
- && mv /root/.bun /opt/bun \
- && ln -s /opt/bun/bin/bun /usr/local/bin/bun
-
-# Ensure Bun is available in PATH for subsequent commands
-ENV PATH="/opt/bun/bin:${PATH}"
 
 # Copy package manifests to install dependencies
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies) using Bun
-# --frozen-lockfile ensures reproducible builds
-# --concurrent-scripts and --network-concurrency optimize install speed
-RUN bun install --frozen-lockfile
+# Install all dependencies (including devDependencies) for build
+RUN npm ci
 
 # Copy source code and build the application
 COPY src/ ./src/
 COPY tsconfig.json ./
-RUN bun run build
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-# Remove devDependencies to reduce image size 
-# (Removing all the devDependencies that we dont need in the final build)
+# Remove devDependencies to reduce image size for the runtime image
 RUN npm prune --omit=dev
 
 
 # ===== PRODUCTION STAGE =====
-FROM node:20-alpine AS production
+FROM node:20-bookworm-slim AS production
 
 WORKDIR /app
 
-# Install timezone data for proper TZ support
-RUN apk add --no-cache tzdata
-
 # Create a dedicated non-root user for security
-RUN addgroup -g 1001 -S appgroup \
- && adduser -u 1001 -S appuser -G appgroup
+RUN groupadd --gid 1001 appgroup \
+ && useradd --uid 1001 --gid appgroup --system --no-create-home appuser
 
 # Copy only production artifacts from the builder stage
 COPY --from=builder /app/node_modules ./node_modules/
