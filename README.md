@@ -195,6 +195,13 @@ Optional: include the dashboard service profile:
 docker compose --profile ui up --build -d
 ```
 
+Using Doppler-managed config (recommended for hosted dashboard/API URLs):
+
+```bash
+cd OpenMemory
+tools/ops/compose_with_doppler.sh up -d --build
+```
+
 Check service status:
 
 ```bash
